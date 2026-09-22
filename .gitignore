@@ -1,0 +1,19 @@
+# Data die we via de Kaggle API ophalen - hoeft niet in git, iedereen download 'm zelf
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Kaggle-token / andere secrets (horen sowieso niet in dit mapje te staan, maar voor de zekerheid)
+kaggle.json
+access_token
+.kaggle/
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
