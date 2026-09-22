@@ -4,18 +4,49 @@ from data import load_data
 st.title("Rijkdom en streams")
 
 st.write(
-    "De kern van onze vraag: hangt het GDP per hoofd van de bevolking van "
-    "het land van herkomst samen met het aantal streams van een artiest?"
+    "Onze onderzoeksvraag draait om GDP per hoofd van de bevolking en het "
+    "aantal streams van een artiest. We gebruiken hiervoor de kolom GDP per "
+    "capita uit de landendata en de kolom Total Streams uit de Spotify data, "
+    "gekoppeld via het land van herkomst van de artiest."
 )
 
-st.write("""
-Wat hier nog moet gebeuren:
-- Artiesten zonder GDP-waarde (land kon niet gekoppeld worden) apart benoemen
-- Een log-versie van streams maken, want een paar artiesten met extreem veel streams trekken de grafiek scheef
-- Scatterplot: GDP per capita tegen streams per artiest, met een trendlijn
-- Dezelfde vergelijking maar dan gemiddeld per land, zodat landen met veel artiesten niet te zwaar meetellen
-- Boxplot: streams per welvaartscategorie (laag, midden, hoog GDP)
-- Correlatiecoëfficiënt berekenen en tonen
-""")
+st.write(
+    "Niet elk land uit de Spotify data kon gekoppeld worden aan de "
+    "landendata, bijvoorbeeld door verschillen in schrijfwijze. Artiesten "
+    "zonder GDP waarde moeten we apart benoemen of uit de analyse halen, "
+    "anders vertekent dat de resultaten."
+)
+
+st.write(
+    "Het aantal streams is erg scheef verdeeld omdat een paar artiesten "
+    "extreem veel meer streams hebben dan de rest. Daarom maken we een log "
+    "versie van de streams kolom, zodat de grafiek beter leesbaar wordt."
+)
+
+st.write(
+    "We maken een scatterplot met GDP per capita op de x as en het aantal "
+    "streams op de y as, met een trendlijn erdoorheen. Zo zien we in een "
+    "oogopslag of er een verband is."
+)
+
+st.write(
+    "Omdat sommige landen veel meer artiesten hebben dan andere, maken we "
+    "ook een versie waarbij we eerst het gemiddelde aantal streams per land "
+    "berekenen. Zo telt een land met tien artiesten niet harder mee dan een "
+    "land met een artiest."
+)
+
+st.write(
+    "Daarnaast verdelen we de landen in drie groepen op basis van GDP, laag, "
+    "midden en hoog, en zetten we die naast elkaar in een boxplot. Dat laat "
+    "zien of rijkere landen over het algemeen artiesten met meer streams "
+    "hebben."
+)
+
+st.write(
+    "Tot slot berekenen we de correlatiecoefficient tussen GDP en streams. "
+    "Dat is een getal tussen min een en een dat aangeeft hoe sterk het "
+    "verband is."
+)
 
 df = load_data()
