@@ -16,9 +16,9 @@ import pandas as pd
 import streamlit as st
 from kaggle.api.kaggle_api_extended import KaggleApi
 
-# Kaggle-dataset-slugs (het stuk van de URL na "/datasets/").
-# Check dit één keer zelf op kaggle.com als het niet lijkt te kloppen.
-DATASET_SPOTIFY = "meeratif/spotify-most-streamed-artists-of-all-time"
+# Kaggle-dataset-slugs (het stuk van de URL na "/datasets/") - geverifieerd
+# tegen de originele bestanden, dit zijn de juiste.
+DATASET_SPOTIFY = "rishavsvault/most-streamed-artists-on-spotify"
 DATASET_COUNTRIES = "fernandol/countries-of-the-world"
 
 # Landnamen in de Spotify-data die anders geschreven zijn dan in de landendata
@@ -30,10 +30,25 @@ COUNTRY_NAME_MAPPING = {
 }
 
 
+def _zet_kaggle_token_klaar():
+    """Lokaal (op je eigen Mac) staat je Kaggle-token al in ~/.kaggle/access_token,
+    dat vindt de kaggle-library vanzelf. Op Streamlit Cloud bestaat dat bestand niet -
+    daar zet je je token in de app-secrets, en die zetten we hier over naar een
+    environment variable zodat authenticate() 'm alsnog vindt."""
+    try:
+        if "KAGGLE_API_TOKEN" in st.secrets:
+            os.environ["KAGGLE_API_TOKEN"] = st.secrets["KAGGLE_API_TOKEN"]
+    except Exception:
+        # Geen secrets.toml lokaal aanwezig - heel normaal, lokaal gebruik je
+        # toch gewoon ~/.kaggle/access_token. Niets aan de hand.
+        pass
+
+
 def _download_and_read(dataset_slug, folder):
     """Download een Kaggle-dataset (alleen als dat nog niet is gebeurd)
     en lees het CSV-bestand dat erin staat in."""
     if not os.path.exists(folder):
+        _zet_kaggle_token_klaar()
         api = KaggleApi()
         api.authenticate()
         api.dataset_download_files(dataset_slug, path=folder, unzip=True)
@@ -41,7 +56,14 @@ def _download_and_read(dataset_slug, folder):
     csv_bestanden = glob.glob(f"{folder}/*.csv")
     print(f"Gevonden in {folder}:", csv_bestanden)
 
-    df = pd.read_csv(csv_bestanden[0])
+    # Sommige Kaggle-datasets bevatten meerdere CSV's (bv. een uitgebreide en
+    # een simpele versie). Kies de "V1.1"-versie als die bestaat - dat is de
+    # rijkste variant, met alle kolommen die we nodig hebben.
+    rijkste = [f for f in csv_bestanden if "v1.1" in f.lower()]
+    gekozen = rijkste[0] if rijkste else csv_bestanden[0]
+    print("Gebruikt bestand:", gekozen)
+
+    df = pd.read_csv(gekozen)
     df.columns = [kolom.strip() for kolom in df.columns]
     return df
 
