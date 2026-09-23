@@ -21,12 +21,12 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 DATASET_SPOTIFY = "rishavsvault/most-streamed-artists-on-spotify"
 DATASET_COUNTRIES = "fernandol/countries-of-the-world"
 
-# Landnamen in de Spotify-data die anders geschreven zijn dan in de landendata
-COUNTRY_NAME_MAPPING = {
-    "South Korea": "Korea, South",
-    "DR Congo": "Congo, Dem. Rep.",
-    "Trinidad and Tobago": "Trinidad & Tobago",
-    "Scotland": "United Kingdom",
+# Landnamen in de landendata die anders geschreven zijn dan in de Spotify-data
+NAAM_CORRECTIES = {
+    "Korea, South": "South Korea",
+    "Korea, North": "North Korea",
+    "Congo, Dem. Rep.": "DR Congo",
+    "Trinidad & Tobago": "Trinidad and Tobago",
 }
 
 
@@ -73,8 +73,14 @@ def load_data():
     spotify = _download_and_read(DATASET_SPOTIFY, "data/spotify")
     countries = _download_and_read(DATASET_COUNTRIES, "data/countries")
 
+    # Spaties voor en achter de tekst weghalen
     spotify["Country of Origin"] = spotify["Country of Origin"].str.strip()
     countries["Country"] = countries["Country"].str.strip()
+    countries["Region"] = countries["Region"].str.strip()
+
+    # Dubbele rijen checken (we verwijderen ze niet automatisch, wel laten zien)
+    print("Dubbele rijen in spotify-data:", spotify.duplicated().sum())
+    print("Dubbele rijen in landendata:", countries.duplicated().sum())
 
     # De landendata heeft komma's als decimaalteken (bv. "48,0" i.p.v. "48.0").
     # Dit probeert elke tekstkolom om te zetten naar een getal; lukt dat niet
@@ -86,13 +92,26 @@ def load_data():
             except (ValueError, AttributeError):
                 pass
 
-    # Landnamen gelijktrekken zodat de join goed werkt
-    spotify["country_mapped"] = spotify["Country of Origin"].replace(COUNTRY_NAME_MAPPING)
+    # Landnamen in de landendata gelijktrekken aan de schrijfwijze in de
+    # Spotify-data, zodat de join hierna geen rijen verliest
+    countries["Country"] = countries["Country"].replace(NAAM_CORRECTIES)
+
+    # Schotland staat in de Spotify-data los vermeld, maar in de landendata
+    # bestaat alleen "United Kingdom". Daarom koppelen we Schotse artiesten
+    # apart aan United Kingdom.
+    spotify["country_mapped"] = spotify["Country of Origin"].replace(
+        {"Scotland": "United Kingdom"}
+    )
+
+    # Percentages afronden op 1 decimaal, netter voor grafieken
+    spotify["% of Solo Streams"] = spotify["% of Solo Streams"].round(1)
+    spotify["% of Collaborative Streams"] = spotify["% of Collaborative Streams"].round(1)
 
     # Samenvoegen - noteer altijd hoeveel rijen je voor en na de join hebt
     print("Rijen vóór de join:", len(spotify))
     df = spotify.merge(countries, left_on="country_mapped", right_on="Country", how="left")
     print("Rijen na de join:", len(df))
+    print("Artiesten zonder gekoppeld land:", df["Country"].isna().sum())
 
     # Handige extra kolom voor de "rijkdom vs. roem"-grafieken
     df["streams_per_million_pop"] = df["Total Streams (in millions)"] / (df["Population"] / 1_000_000)

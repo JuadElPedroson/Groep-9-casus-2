@@ -1,52 +1,69 @@
+import numpy as np
+import pandas as pd
+import plotly.express as px
 import streamlit as st
 from data import load_data
 
 st.title("Rijkdom en streams")
 
 st.write(
-    "Onze onderzoeksvraag draait om GDP per hoofd van de bevolking en het "
-    "aantal streams van een artiest. We gebruiken hiervoor de kolom GDP per "
-    "capita uit de landendata en de kolom Total Streams uit de Spotify data, "
-    "gekoppeld via het land van herkomst van de artiest."
-)
-
-st.write(
-    "Niet elk land uit de Spotify data kon gekoppeld worden aan de "
-    "landendata, bijvoorbeeld door verschillen in schrijfwijze. Artiesten "
-    "zonder GDP waarde moeten we apart benoemen of uit de analyse halen, "
-    "anders vertekent dat de resultaten."
-)
-
-st.write(
-    "Het aantal streams is erg scheef verdeeld omdat een paar artiesten "
-    "extreem veel meer streams hebben dan de rest. Daarom maken we een log "
-    "versie van de streams kolom, zodat de grafiek beter leesbaar wordt."
-)
-
-st.write(
-    "We maken een scatterplot met GDP per capita op de x as en het aantal "
-    "streams op de y as, met een trendlijn erdoorheen. Zo zien we in een "
-    "oogopslag of er een verband is."
-)
-
-st.write(
-    "Omdat sommige landen veel meer artiesten hebben dan andere, maken we "
-    "ook een versie waarbij we eerst het gemiddelde aantal streams per land "
-    "berekenen. Zo telt een land met tien artiesten niet harder mee dan een "
-    "land met een artiest."
-)
-
-st.write(
-    "Daarnaast verdelen we de landen in drie groepen op basis van GDP, laag, "
-    "midden en hoog, en zetten we die naast elkaar in een boxplot. Dat laat "
-    "zien of rijkere landen over het algemeen artiesten met meer streams "
-    "hebben."
-)
-
-st.write(
-    "Tot slot berekenen we de correlatiecoefficient tussen GDP en streams. "
-    "Dat is een getal tussen min een en een dat aangeeft hoe sterk het "
-    "verband is."
+    "De kern van onze vraag: hangt het GDP per hoofd van de bevolking van "
+    "het land van herkomst samen met het aantal streams van een artiest?"
 )
 
 df = load_data()
+
+df_schoon = df.dropna(subset=["GDP ($ per capita)"]).copy()
+aantal_zonder_land = df["GDP ($ per capita)"].isna().sum()
+
+st.write(
+    f"{aantal_zonder_land} van de {len(df)} artiesten konden niet gekoppeld "
+    "worden aan een land met GDP-gegevens en laten we hier buiten "
+    "beschouwing."
+)
+
+df_schoon["streams_log"] = np.log10(df_schoon["Total Streams (in millions)"])
+
+correlatie = df_schoon["GDP ($ per capita)"].corr(df_schoon["Total Streams (in millions)"])
+st.metric("Correlatie GDP per capita en streams", round(correlatie, 2))
+
+st.subheader("GDP per capita tegen streams, per artiest")
+fig1 = px.scatter(
+    df_schoon,
+    x="GDP ($ per capita)",
+    y="streams_log",
+    hover_name="Artist Name",
+    trendline="ols",
+    labels={"streams_log": "streams (log schaal)"},
+)
+st.plotly_chart(fig1, use_container_width=True)
+
+st.subheader("GDP per capita tegen gemiddeld aantal streams, per land")
+per_land = df_schoon.groupby("Country of Origin").agg(
+    gdp=("GDP ($ per capita)", "mean"),
+    gemiddelde_streams=("Total Streams (in millions)", "mean"),
+    aantal_artiesten=("Artist Name", "count"),
+).reset_index()
+
+fig2 = px.scatter(
+    per_land,
+    x="gdp",
+    y="gemiddelde_streams",
+    size="aantal_artiesten",
+    hover_name="Country of Origin",
+    labels={"gdp": "GDP per capita", "gemiddelde_streams": "gemiddelde streams"},
+)
+st.plotly_chart(fig2, use_container_width=True)
+
+st.subheader("Streams per welvaartscategorie")
+df_schoon["welvaart"] = pd.qcut(
+    df_schoon["GDP ($ per capita)"], q=3, labels=["laag", "midden", "hoog"]
+)
+
+fig3 = px.box(
+    df_schoon,
+    x="welvaart",
+    y="streams_log",
+    labels={"welvaart": "welvaartscategorie", "streams_log": "streams (log schaal)"},
+)
+st.plotly_chart(fig3, use_container_width=True)
