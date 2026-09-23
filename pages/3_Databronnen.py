@@ -10,11 +10,11 @@ st.write(
 )
 
 st.write("""
-Wat hier nog moet gebeuren:
-- Aantal rijen voor en na het samenvoegen laten zien
-- Landen die niet gekoppeld konden worden apart benoemen
-- Kolommen met ontbrekende waarden in beeld brengen
-- De volledige tabel doorzoekbaar maken
+Countries of the World. (n.d.). Retrieved September 23, 2026, from https://www.kaggle.com/datasets/fernandol/countries-of-the-world
+Most Streamed Artists on Spotify. (n.d.). Retrieved September 23, 2026, from https://www.kaggle.com/datasets/rishavsvault/most-streamed-artists-on-spotify
+
+Streamlit • A faster way to build and share data apps. (2021, January 14). https://streamlit.io/
+
 """)
 
 df = load_data()
