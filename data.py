@@ -12,6 +12,7 @@ dezelfde (schone, samengevoegde) tabel werken.
 
 import os
 import glob
+import time
 import pandas as pd
 import streamlit as st
 from kaggle.api.kaggle_api_extended import KaggleApi
@@ -28,6 +29,9 @@ NAAM_CORRECTIES = {
     "Congo, Dem. Rep.": "DR Congo",
     "Trinidad & Tobago": "Trinidad and Tobago",
 }
+
+
+WELVAARTSGROEPEN = ["Arm", "Laag-midden", "Hoog-midden", "Rijk"]
 
 
 def _zet_kaggle_token_klaar():
@@ -47,11 +51,21 @@ def _zet_kaggle_token_klaar():
 def _download_and_read(dataset_slug, folder):
     """Download een Kaggle-dataset (alleen als dat nog niet is gebeurd)
     en lees het CSV-bestand dat erin staat in."""
-    if not os.path.exists(folder):
+    if not glob.glob(f"{folder}/*.csv"):
         _zet_kaggle_token_klaar()
         api = KaggleApi()
         api.authenticate()
-        api.dataset_download_files(dataset_slug, path=folder, unzip=True)
+        # Tot 3 keer proberen, voor als de API even traag is of niet reageert
+        for poging in range(3):
+            try:
+                api.dataset_download_files(dataset_slug, path=folder, unzip=True)
+                break
+            except Exception as fout:
+                print(f"Download mislukt (poging {poging + 1}):", fout)
+                time.sleep(2)
+        else:
+            st.error("De data kon niet worden opgehaald bij Kaggle, probeer het later opnieuw.")
+            st.stop()
 
     csv_bestanden = glob.glob(f"{folder}/*.csv")
     print(f"Gevonden in {folder}:", csv_bestanden)
@@ -69,32 +83,45 @@ def _download_and_read(dataset_slug, folder):
 
 
 @st.cache_data
-def load_data():
-    spotify = _download_and_read(DATASET_SPOTIFY, "data/spotify")
+def load_landen():
+    # Alle landen, ook zonder artiest (nodig voor de wereldbevolking)
     countries = _download_and_read(DATASET_COUNTRIES, "data/countries")
-
-    # Spaties voor en achter de tekst weghalen
-    spotify["Country of Origin"] = spotify["Country of Origin"].str.strip()
     countries["Country"] = countries["Country"].str.strip()
     countries["Region"] = countries["Region"].str.strip()
-
-    # Dubbele rijen checken (we verwijderen ze niet automatisch, wel laten zien)
-    print("Dubbele rijen in spotify-data:", spotify.duplicated().sum())
     print("Dubbele rijen in landendata:", countries.duplicated().sum())
 
     # De landendata heeft komma's als decimaalteken (bv. "48,0" i.p.v. "48.0").
-    # Dit probeert elke tekstkolom om te zetten naar een getal; lukt dat niet
-    # (zoals bij "Country" of "Region"), dan blijft die kolom gewoon tekst.
+    # Dit zet elke kolom om naar een getal, behalve Country en Region.
+    # errors="coerce" zorgt dat een enkele rare waarde niet de hele kolom
+    # laat mislukken - die ene waarde wordt dan NaN in plaats van tekst.
+    tekst_kolommen = ["Country", "Region"]
     for kolom in countries.columns:
-        if countries[kolom].dtype == "object":
-            try:
-                countries[kolom] = countries[kolom].str.replace(",", ".").astype(float)
-            except (ValueError, AttributeError):
-                pass
+        if kolom in tekst_kolommen:
+            continue
+        schoon = countries[kolom].astype(str).str.replace(",", ".").str.strip()
+        countries[kolom] = pd.to_numeric(schoon, errors="coerce")
 
     # Landnamen in de landendata gelijktrekken aan de schrijfwijze in de
     # Spotify-data, zodat de join hierna geen rijen verliest
     countries["Country"] = countries["Country"].replace(NAAM_CORRECTIES)
+
+    # Alle landen in 4 even grote groepen op basis van GDP per inwoner
+    countries["Welvaartsgroep"] = pd.qcut(
+        countries["GDP ($ per capita)"], 4, labels=WELVAARTSGROEPEN
+    )
+    return countries
+
+
+@st.cache_data
+def load_data():
+    spotify = _download_and_read(DATASET_SPOTIFY, "data/spotify")
+    countries = load_landen()
+
+    # Spaties voor en achter de tekst weghalen
+    spotify["Country of Origin"] = spotify["Country of Origin"].str.strip()
+
+    # Dubbele rijen checken (we verwijderen ze niet automatisch, wel laten zien)
+    print("Dubbele rijen in spotify-data:", spotify.duplicated().sum())
 
     # Schotland staat in de Spotify-data los vermeld, maar in de landendata
     # bestaat alleen "United Kingdom". Daarom koppelen we Schotse artiesten
@@ -117,6 +144,15 @@ def load_data():
     df["streams_per_million_pop"] = df["Total Streams (in millions)"] / (df["Population"] / 1_000_000)
 
     return df
+
+
+def voeg_marge_toe():
+    """Wat ruimte aan de zijkanten van de pagina, anders lopen grafieken
+    helemaal tot de rand door en oogt het rommelig."""
+    st.markdown(
+        "<style>.block-container {max-width: 1100px; padding-left: 3rem; padding-right: 3rem;}</style>",
+        unsafe_allow_html=True,
+    )
 
 
 if __name__ == "__main__":
