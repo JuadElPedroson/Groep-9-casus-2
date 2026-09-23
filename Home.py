@@ -49,5 +49,13 @@ fig = px.scatter(gefilterd, x="GDP ($ per capita)", y="Total Streams (in million
                  labels={"GDP ($ per capita)": "GDP per capita ($)", "Total Streams (in millions)": "Totaal streams (miljoen)"})
  
 st.plotly_chart(fig, use_container_width=True)
- 
-st.dataframe(df.head())
+
+st.caption("""
+De grafiek laat een lichte opwaartse trend zien: artiesten uit landen met een hogere 
+GDP per capita halen vaker hoge streamcijfers. De hoogste uitschieters (rond de 
+120-140 miljoen streams) komen allemaal uit Noord-Amerika, het rijkste land in deze 
+dataset. Toch is het verband niet perfect: ook uit Noord-Amerika komen veel artiesten 
+met relatief weinig streams, en artiesten uit armere regio's (zoals Latijns-Amerika) 
+kunnen soms hoger scoren dan verwacht. Welvaart lijkt dus kansen te vergroten, maar 
+garandeert geen succes.
+""")
