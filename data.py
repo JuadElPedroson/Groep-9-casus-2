@@ -73,6 +73,42 @@ def load_data():
     spotify = _download_and_read(DATASET_SPOTIFY, "data/spotify")
     countries = _download_and_read(DATASET_COUNTRIES, "data/countries")
 
+    # countries opschonen
+
+    # Spaties voor en achter de text weghalen
+    countries['Country'] = countries['Country'].str.strip()
+    countries['Region'] = countries['Region'].str.strip()
+
+    # de komma's in de cijferkolommen vervangen door een punt, zodat pandas ze als getal (float) inleest.
+    komma_kolommen = [
+       'Pop. Density (per sq. mi.)', 'Coastline (coast/area ratio)', 'Net migration',
+       'Infant mortality (per 1000 births)', 'Literacy (%)', 'Phones (per 1000)',
+       'Arable (%)', 'Crops (%)', 'Other (%)', 'Climate', 'Birthrate', 'Deathrate',
+        'Agriculture', 'Industry', 'Service'
+    ]
+
+    for kolom in komma_kolommen:
+        countries[kolom] = countries[kolom].str.replace(',', '.')
+        countries[kolom] = pd.to_numeric(countries[kolom])
+
+    # Let op: in de Spotify-dataset komt ook "Scotland" voor als land van herkomst (bv. Calvin Harris).
+    # Schotland staat niet los in de countries-dataset, want dat valt onder "United Kingdom".
+    # Daarom is Scotland hierboven al meegenomen in de COUNTRY_NAME_MAPPING.
+
+    # spotify opschonen
+
+    # spaties weghalen
+    spotify.columns = spotify.columns.str.strip()
+    print("Kolommen spotify-data:", spotify.columns.tolist())
+
+    # Checken op dubbele artiesten en dubbele rijen
+    print('Dubbele artiestennamen:', spotify['Artist Name'].duplicated().sum())
+    print('Volledig dubbele rijen:', spotify.duplicated().sum())
+
+    # percentages afronden op 1 decimaal
+    spotify['% of Solo Streams'] = spotify['% of Solo Streams'].round(1)
+    spotify['% of Collaborative Streams'] = spotify['% of Collaborative Streams'].round(1)
+
     spotify["Country of Origin"] = spotify["Country of Origin"].str.strip()
     countries["Country"] = countries["Country"].str.strip()
 
