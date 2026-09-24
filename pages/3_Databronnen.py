@@ -3,11 +3,11 @@ from data import load_data
 
 st.title("Databronnen")
 
-st.write(
-    "we hebben tijdens deze casus AI vornamelijk gebruikt om data op te halen via de API van kaggel en als een ondersteunende tool voor onze coding skills "
-)
+st.write("Hieronder staan de bronnen die we voor dit dashboard hebben gebruikt.")
 
 st.write("""
+Anthropic. (2026). Claude (Sonnet 5) [Large language model]. https://claude.ai. Gebruikt voor de koppeling met de Kaggle API om de data op te halen en als ondersteuning bij de rest van de code.
+
 Countries of the World. (n.d.). Retrieved September 23, 2026, from https://www.kaggle.com/datasets/fernandol/countries-of-the-world
 
 Most Streamed Artists on Spotify. (n.d.). Retrieved September 23, 2026, from https://www.kaggle.com/datasets/rishavsvault/most-streamed-artists-on-spotify

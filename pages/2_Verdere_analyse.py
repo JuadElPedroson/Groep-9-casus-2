@@ -33,17 +33,15 @@ st.bar_chart(data=totaal_df, x=kolom, y="Total Streams (in millions)", color="Re
 
 if weergave == "Landen":
     st.caption("""
-    Deze grafiek laat zien hoeveel streams artiesten uit elk land bij elkaar optellen. 
-    Grote landen met veel bekende artiesten (zoals de Verenigde Staten) domineren van 
-    nature deze grafiek, daarom is de multiselect hierboven handig om landen uit te 
+    Deze grafiek laat zien hoeveel streams artiesten uit elk land bij elkaar optellen.
+    Grote landen met veel bekende artiesten (zoals de Verenigde Staten) domineren van
+    nature deze grafiek, daarom is de multiselect hierboven handig om landen uit te
     zetten en kleinere landen beter met elkaar te vergelijken.
     """)
 else:
     st.caption("""
-    Deze grafiek laat zien hoeveel streams er per genre bij elkaar zijn opgeteld. 
-    Populaire genres zoals Hip-Hop en Pop domineren van nature deze grafiek, daarom 
-    is de multiselect hierboven handig om genres uit te zetten en kleinere genres 
+    Deze grafiek laat zien hoeveel streams er per genre bij elkaar zijn opgeteld.
+    Populaire genres zoals Hip-Hop en Pop domineren van nature deze grafiek, daarom
+    is de multiselect hierboven handig om genres uit te zetten en kleinere genres
     beter met elkaar te vergelijken.
     """)
-
-df = load_data()
